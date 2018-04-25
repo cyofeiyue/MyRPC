@@ -3,13 +3,26 @@ package com.feiyue.rpc
 import akka.actor.{Actor, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
+import scala.collection.mutable
+import scala.concurrent.duration._
 
-class Master extends Actor{
+
+class Master(val host: String, val port: Int) extends Actor{
+
+  val CHECK_INTERVAL = 15000
+
+  // workerId -> WorkerInfo
+  val idToWorkers = new mutable.HashMap[String, WorkerInfo]()
+  // WorkerInfo
+  val workers = new mutable.HashSet[WorkerInfo]()
 
   println("Master:constructor invoked")
 
   override def preStart(): Unit = {
     println("Master:preStart invoked")
+
+    import context.dispatcher
+    context.system.scheduler.schedule(0 millis, CHECK_INTERVAL millis, self, CheckTimeOutWorker)
   }
 
   // 用于接收消息
@@ -21,6 +34,37 @@ class Master extends Actor{
 
     case "test" => {
       println("Master:test")
+    }
+
+    case RegisterWorker(workerId, memory, cores) => {
+      if(!idToWorkers.contains(workerId)) {
+        val workerInfo =  new WorkerInfo(workerId,memory,cores)
+        idToWorkers(workerId) = workerInfo
+        workers += workerInfo
+
+        //通知worker注册
+        sender ! RegisteredWorker(s"akka.tcp://MasterSystem@$host:$port/user/Master")
+      }
+    }
+
+    case Heartbeat(id) => {
+      if(idToWorkers.contains(id)){
+        val workerInfo = idToWorkers(id)
+        //报活
+        workerInfo.lastTimeHeartBeat = System.currentTimeMillis()
+      }
+
+    }
+
+    case CheckTimeOutWorker => {
+      val currentTime = System.currentTimeMillis()
+      val toRemoves = workers.filter(x => currentTime - x.lastTimeHeartBeat > CHECK_INTERVAL)
+      for(i <- toRemoves){
+        workers -= i
+        idToWorkers.remove(i.id)
+      }
+
+      println("和Master相连的Worker还有：" + workers.size)
     }
 
   }
@@ -47,8 +91,9 @@ class Master extends Actor{
 
     //创建Actor, 起个名字：MasterSystem
     //Master主构造器会执行
-    val master = actorSystem.actorOf(Props[Master],"Master")
+    //val master = actorSystem.actorOf(Props[Master],"Master")
 
+    val master = actorSystem.actorOf(Props(new Master(host, port)),"Master")
     //发送信息
     master ! "test"
 
