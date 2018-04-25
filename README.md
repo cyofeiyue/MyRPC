@@ -42,28 +42,12 @@ akka.remote.netty.tcp.port = "$port"
 ```
 C:\Program Files\Java\jdk1.7.0_80\bin>jps -l
 59572 my-rpc-2.0.jar
-49300 cn.itcast.thread.ThreadDemo
-53816 org.jetbrains.idea.maven.server.RemoteMavenServer
-51428 cn.itcast.thread.ThreadDemo
-26592 org.jetbrains.jps.cmdline.Launcher
-33072 com.feiyue.spark.day5.StatefulWordCount
-4184 cn.itcast.thread.ThreadDemo
-59612
-52624 cn.feiyue.rpc.cn.feiyue.rpc.Worker
 12480 sun.tools.jps.Jps
 ```
 服务端机器（192.168.92.150）启动的java进程（Master）
 ```
 [hadoop@hadoop ~]$ jps -m
-3216 NodeManager
-7056 Master --host hadoop --port 7077 --webui-port 8080
-7121 Worker --webui-port 8081 spark://hadoop:7077
 47666 jar 192.168.92.150 8888
-2949 SecondaryNameNode
-3606 QuorumPeerMain /home/hadoop/app/zookeeper-3.4.5-cdh5.7.0/bin/../conf/zoo.cfg
-2666 NameNode
-2763 DataNode
-3118 ResourceManager
 47823 Jps -m
 ```
 
